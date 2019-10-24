@@ -40,6 +40,6 @@ looks for `.csv` files in the `data` folder.
 
 - `simulation` contains a script that simulates ideal data for the
 model and verifies the model by fitting it to the simulated data.
-The summary of results is in `summary.csv`. The script also generate
+The summary of results is in `summary.csv`. The script also generates
 datasets and moves them to `data` under the names of
 `simulated-example`.
