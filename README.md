@@ -13,7 +13,7 @@ the working directory is that of the `.Rproj` file, for example:
 
 ```
 cd path/to/transmission-fitness.Rproj
-Rscript model/model.R
+Rscript data-plot/data-plot.R
 ```
 
 ## Directories
