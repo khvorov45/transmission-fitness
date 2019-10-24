@@ -1,0 +1,3 @@
+term,model,data,true_value,median_mean,median_sd,sd_mean,nsim
+kappa,no-meas-error,no-meas-error,5,5.043538385894645,0.19805848559048686,0.1991473619891904,1000
+relative_fitness,no-meas-error,no-meas-error,1,1.00171214707087,0.0285611920052262,0.02947136611497501,1000
