@@ -3,8 +3,8 @@
 # Created 2019/10/22
 # Last edit 2019/10/24
 
-library(rstan)
-library(dplyr)
+suppressPackageStartupMessages(library(rstan))
+suppressPackageStartupMessages(library(dplyr))
 library(purrr)
 library(future)
 library(furrr)
@@ -26,80 +26,189 @@ rbeta_proportion <- function(n, mean, kappa) {
 }
 
 # Simulates one dataset
-simulate <- function(nsam, relative_fitness, kappa, seed = NULL) {
+simulate <- function(nsam,
+                     relative_fitness, kappa,
+                     low_bound = 0, upper_bound = 1, measure_sd = 0,
+                     seed = NULL) {
   if (!is.null(seed)) set.seed(seed)
+
+  take_measurement <- function(vec) {
+    case_when(
+      vec <= low_bound ~ 0,
+      vec >= upper_bound ~ 1,
+      TRUE ~ truncnorm::rtruncnorm(n(), 0, 1, vec, measure_sd)
+    )
+  }
+
   tibble(.rows = nsam) %>%
     mutate(
       donor = runif(nsam, 0, 1),
       recipient_expected = donor /
         (donor + (1 - donor) * exp(relative_fitness)),
-      recipient_observed = rbeta_proportion(n(), recipient_expected, kappa),
-      relative_fitness = relative_fitness,
-      kappa = kappa
+      recipient_generated = rbeta_proportion(n(), recipient_expected, kappa),
+      recipient_measured = take_measurement(recipient_generated),
+      donor_measured = take_measurement(donor)
     )
+}
+
+# Simulate a profile according to a dictionary
+simulate_profile <- function(data_name, data_dict, seed = NULL) {
+  pars <- data_dict %>% filter(name == data_name) %>% select(-name)
+  if (nrow(pars) == 0)
+    rlang::abort(paste0("no name ", data_name, " in data_dict"))
+  do.call(simulate, c(pars, seed = seed))
+}
+
+# Fits a model to a simulated dataset
+fit_stan_model <- function(model_compiled,
+                           simulated_data,
+                           seed = sample.int(.Machine$integer.max, 1)) {
+  res <- NULL
+  try(
+    expr = res <- sampling(
+      model_compiled,
+      data = list(
+        n = nrow(simulated_data),
+        donor_observed = simulated_data$donor_measured,
+        recipient_observed = simulated_data$recipient_measured
+      ),
+      chains = 4,
+      iter = 2000,
+      cores = 4,
+      open_progress = FALSE,
+      seed = seed
+    ),
+    silent = TRUE
+  )
+  res
+}
+
+summ_stan_fit <- function(stan_fit,
+                          model_name = NULL, data_name = NULL,
+                          data_dict = NULL,
+                          index = NULL, seed = NULL) {
+  if (is.null(stan_fit)) return(NULL)
+  pars <- names(stan_fit)[!grepl("\\[", names(stan_fit))]
+  pars <- pars[pars != "lp__"]
+  summ <- summary(stan_fit, pars = pars)$summary
+  summ <- summ %>%
+    as_tibble() %>%
+    mutate(
+      term = rownames(summ), model = model_name, data = data_name,
+      index = index, seed = seed
+    )
+  if (!is.null(data_dict)) {
+    if (is.null(data_name)) rlang::abort("no data_name to go with data_dict")
+    true_vals <- data_dict %>%
+      filter(name == data_name) %>%
+      select(-name) %>%
+      tidyr::pivot_longer(
+        everything(), names_to = "term", values_to = "true_value"
+      )
+    summ <- left_join(summ, true_vals, by = "term")
+  }
+  summ
 }
 
 # Simulates one dataset and fits the model to it
-fit_one_sim <- function(index, init_seed, model, ...) {
-  seed <- init_seed + index
-  simulated_data <- simulate(seed = seed, ...)
-  stan_fit <- sampling(
-    model,
-    data = list(
-      n = nrow(simulated_data),
-      donor_observed = simulated_data$donor,
-      recipient_observed = simulated_data$recipient_observed
-    ),
-    chains = 4,
-    iter = 2000,
-    cores = 4,
-    open_progress = FALSE,
-    seed = seed
-  )
-  summ <- summary(stan_fit, pars = c("relative_fitness", "kappa"))$summary
-  summ %>%
-    as_tibble() %>%
-    mutate(term = rownames(summ), index = index, seed = seed) %>%
-    select(term, everything())
+fit_one_sim <- function(data_name, data_dict,
+                        model_compiled, model_name = NULL,
+                        index = NULL, init_seed = NULL) {
+  if (!is.null(index) && !is.null(init_seed)) seed <- init_seed + index
+  else seed <- sample.int(.Machine$integer.max, 1)
+  simulated_data <- simulate_profile(data_name, data_dict, seed = seed)
+  stan_fit <- fit_stan_model(model_compiled, simulated_data, seed)
+  summ_stan_fit(stan_fit, model_name, data_name, data_dict, index, seed)
 }
 
-fit_many_sims <- function(nsim, init_seed, model, ...) {
-  future_map_dfr(1:nsim, fit_one_sim, init_seed, model, ...)
+fit_many_sims <- function(nsim, data_name, data_dict,
+                          model_compiled,
+                          model_name = NULL, init_seed = NULL) {
+  future_map_dfr(
+    1:nsim,
+    function(index) fit_one_sim(
+      data_name = data_name, data_dict = data_dict,
+      model_compiled = model_compiled, model_name = model_name, index = index,
+      init_seed = init_seed
+    )
+  )
+}
+
+verify_model <- function(model_name, data_name, data_dict,
+                         nsim,
+                         model_folder, simulation_folder,
+                         model_compiled = NULL,
+                         write_results = TRUE,
+                         verbose = TRUE) {
+  if (is.null(model_compiled)) {
+    if (verbose) message(paste0("compiling model ", model_name))
+    model_compiled <- stan_model(file.path(
+      model_folder, paste0(model_name, ".stan")
+    ))
+  }
+  if (verbose) message(paste0("fitting ", model_name, " to ", data_name))
+  res <- fit_many_sims(
+    nsim, data_name, data_dict,
+    model_compiled, model_name ,
+    init_seed = 20191024
+  )
+  csv_name <- paste0(model_name, "--", data_name, "--", nsim, "sims.csv")
+  if (write_results) {
+    if (verbose) message(paste0("writing ", csv_name))
+    write_csv(res, file.path(simulation_folder, csv_name))
+    return(invisible(res))
+  }
+  res
 }
 
 # Save an example to the data folder
-dat <- simulate(nsam = 1e3, relative_fitness = 1, kappa = 5, seed = 20191024)
 write_csv(
-  select(dat, recipient = recipient_observed, donor, relative_fitness, kappa),
-  file.path(data_folder, "simulated-example1.csv")
+  simulate(nsam = 1e3, relative_fitness = 1, kappa = 5, seed = 20191024) %>%
+    select(recipient = recipient_measured, donor = donor_measured) %>%
+    mutate(relative_fitness = 1, kappa = 5, seed = 20191024),
+  file.path(data_folder, "simulated--no-meas-error.csv")
 )
 
-# Verify the no measurement error model
-nsim <- 2
-model_filename <- "no-meas-error"
-model_compiled <- stan_model(file.path(
-  model_folder, paste0(model_filename, ".stan")
-))
-true_rel_fit <- 1
-true_kappa <- 5
-data_name <- "no-meas-error"
-res <- fit_many_sims(
-  nsim, init_seed = 20191024, mod = model_compiled,
-  nsam = 1e3, relative_fitness = true_rel_fit, kappa = true_kappa
+# Parameters for different data types
+data_dict <- tribble(
+  ~name, ~nsam, ~relative_fitness, ~kappa,
+  ~low_bound, ~upper_bound, ~measure_sd,
+  "no-meas-error", 1e3, 1, 5, 0, 1, 0,
+  "meas-error", 1e3, 1, 5, 0.05, 0.95, 0.02
 )
-res <- res %>%
-  mutate(
-    model = model_filename,
-    data = data_name,
-    true_value = case_when(
-      term == "relative_fitness" ~ true_rel_fit,
-      term == "kappa" ~ true_kappa
-    )
-  )
-write_csv(
-  res,
-  file.path(
-    simulation_folder,
-    paste0(model_filename, "--", data_name, "--", nsim, "sims.csv")
-  )
+
+# Simulating one of the data profiles and fitting one of the models to it
+
+nsim <- 200
+
+verify_model(
+  model_name = "alex-modified",
+  data_name = "no-meas-error", data_dict = data_dict,
+  nsim = nsim, model_folder = model_folder,
+  simulation_folder = simulation_folder,
+  write_results = TRUE
 )
+
+
+
+meas_error_mod <- stan_model("model/meas-error.stan")
+
+dat <- simulate(5, 1, 5)
+fit <- sampling(
+  meas_error_mod,
+  data = list(
+    n = nrow(dat),
+    donor_observed = dat$donor_measured,
+    recipient_observed = dat$recipient_measured
+  ),
+  chains = 1,
+  iter = 2000,
+  open_progress = FALSE,
+  # init = list(list(
+  #   "recipient_imputed" = dat$recipient_measured,
+  # ))
+)
+summ_stan_fit(fit)
+extract(fit, pars = "recipient_imputed[5]", inc_warmup = TRUE)[[1]][1:10]
+fit
+get_inits(fit)
