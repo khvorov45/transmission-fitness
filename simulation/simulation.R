@@ -1,7 +1,7 @@
 # Simulated data
 # Arseniy Khvorov
 # Created 2019/10/22
-# Last edit 2019/10/24
+# Last edit 2019/10/28
 
 suppressPackageStartupMessages(library(rstan))
 suppressPackageStartupMessages(library(dplyr))
@@ -19,7 +19,7 @@ simulation_folder <- "simulation"
 # Stan-like reparameterisation of the beta distribution
 # The larger the kappa, the smaller the variance
 rbeta_proportion <- function(n, mean, kappa) {
-  if (mean > 1 || mean < 0) abort("mean out of bounds")
+  if (mean > 1 || mean < 0) rlang::abort("mean out of bounds")
   alpha <- mean * kappa
   beta <- (1 - mean) * kappa
   rbeta(n, alpha, beta)
@@ -28,16 +28,12 @@ rbeta_proportion <- function(n, mean, kappa) {
 # Simulates one dataset
 simulate <- function(nsam,
                      relative_fitness, kappa,
-                     low_bound = 0, upper_bound = 1, measure_sd = 0,
+                     measure_sd = 0,
                      seed = NULL) {
   if (!is.null(seed)) set.seed(seed)
 
   take_measurement <- function(vec) {
-    case_when(
-      vec <= low_bound ~ 0,
-      vec >= upper_bound ~ 1,
-      TRUE ~ truncnorm::rtruncnorm(n(), 0, 1, vec, measure_sd)
-    )
+    truncnorm::rtruncnorm(n(), 0, 1, vec, measure_sd)
   }
 
   tibble(.rows = nsam) %>%
@@ -63,9 +59,8 @@ simulate_profile <- function(data_name, data_dict, seed = NULL) {
 fit_stan_model <- function(model_compiled,
                            simulated_data,
                            seed = sample.int(.Machine$integer.max, 1)) {
-  res <- NULL
-  try(
-    expr = res <- sampling(
+  # This will still return non-NULL when it fails
+  sampling(
       model_compiled,
       data = list(
         n = nrow(simulated_data),
@@ -77,20 +72,23 @@ fit_stan_model <- function(model_compiled,
       cores = 4,
       open_progress = FALSE,
       seed = seed
-    ),
-    silent = TRUE
   )
-  res
 }
 
 summ_stan_fit <- function(stan_fit,
                           model_name = NULL, data_name = NULL,
                           data_dict = NULL,
                           index = NULL, seed = NULL) {
-  if (is.null(stan_fit)) return(NULL)
-  pars <- names(stan_fit)[!grepl("\\[", names(stan_fit))]
+  # Check for empty fit
+  pars <- NULL
+  try(
+    expr = pars <- names(stan_fit)[!grepl("\\[", names(stan_fit))],
+    silent = TRUE
+  )
+  if (is.null(pars)) return(NULL)
   pars <- pars[pars != "lp__"]
-  summ <- summary(stan_fit, pars = pars)$summary
+  summ <- summary(stan_fit, pars = pars)
+  summ <- summ$summary
   summ <- summ %>%
     as_tibble() %>%
     mutate(
@@ -171,44 +169,21 @@ write_csv(
 
 # Parameters for different data types
 data_dict <- tribble(
-  ~name, ~nsam, ~relative_fitness, ~kappa,
-  ~low_bound, ~upper_bound, ~measure_sd,
-  "no-meas-error", 1e3, 1, 5, 0, 1, 0,
-  "meas-error", 1e3, 1, 5, 0.05, 0.95, 0.02
+  ~name, ~nsam, ~relative_fitness, ~kappa, ~measure_sd,
+  "no-meas-error", 1e3, 1, 5, 0,
+  "meas-error", 1e3, 1, 5, 0.02,
+  "meas-error-neg", 1e3, -1, 5, 0.02,
+  "likereal", 10, 1, 5, 0.02
 )
 
 # Simulating one of the data profiles and fitting one of the models to it
 
-nsim <- 200
+nsim <- 1e3
 
 verify_model(
-  model_name = "alex-modified",
-  data_name = "no-meas-error", data_dict = data_dict,
+  model_name = "no-meas-error",
+  data_name = "meas-error-neg", data_dict = data_dict,
   nsim = nsim, model_folder = model_folder,
   simulation_folder = simulation_folder,
   write_results = TRUE
 )
-
-
-
-meas_error_mod <- stan_model("model/meas-error.stan")
-
-dat <- simulate(5, 1, 5)
-fit <- sampling(
-  meas_error_mod,
-  data = list(
-    n = nrow(dat),
-    donor_observed = dat$donor_measured,
-    recipient_observed = dat$recipient_measured
-  ),
-  chains = 1,
-  iter = 2000,
-  open_progress = FALSE,
-  # init = list(list(
-  #   "recipient_imputed" = dat$recipient_measured,
-  # ))
-)
-summ_stan_fit(fit)
-extract(fit, pars = "recipient_imputed[5]", inc_warmup = TRUE)[[1]][1:10]
-fit
-get_inits(fit)

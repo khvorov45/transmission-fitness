@@ -8,7 +8,8 @@ framework using [Stan](https://mc-stan.org/) and
 ## Usage
 
 Everything can be run interactively (launch the `.Rproj` file in
-RStudio). Every script can also be executed from a terminal as long as
+RStudio). Every script (except those that start with `test-`) 
+can also be executed from a terminal as long as
 the working directory is that of the `.Rproj` file, for example:
 
 ```
@@ -34,7 +35,11 @@ looks for `.csv` files in the `data` folder.
 - `fit` fits a model from the `model` folder to the datasets in the
 `data` folder.
 
-- `model` contains Stan model files.
+- `fit-diagnostic` diagnostics of model fits found in `fit`.
+
+- `fit-plot` plots of results.
+
+- `model` contains Stan model files. `alex_modified` is the same as [`alex-unmodified`][https://github.com/aezarebski/competitive-mixtures/blob/master/src/between-host/mccaw.stan] except that variable names are changed to be the same as they are in `no-meas-error`.
 
 - `paper` contains the paper describing the model.
 

@@ -25,7 +25,7 @@ sim_summary <- sim_results %>%
     median_mean = mean(`50%`),
     median_sd = sd(`50%`),
     sd_mean = mean(sd),
-    nsim = max(index)
+    nsim = length(unique(seed))
   )
 
 write_csv(sim_summary, file.path(simulation_folder, "summary.csv"))

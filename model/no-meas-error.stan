@@ -1,7 +1,7 @@
 // No measurement error model
 // Arseniy Khvorov
 // Created 2019/10/22
-// Last edit 2019/10/24
+// Last edit 2019/10/28
 
 functions {
   // Stan's beta distribution definition sets density to 0 at 1 and 0
@@ -47,7 +47,5 @@ transformed parameters {
 model {
   relative_fitness ~ normal(0, 3);
   kappa ~ exponential(0.1);
-  for (i in 1:n) {
-    recipient_modified[i] ~ beta_proportion(recipient_expected[i], kappa);
-  }
+  recipient_modified ~ beta_proportion(recipient_expected, kappa);
 }
