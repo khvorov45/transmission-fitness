@@ -37,7 +37,7 @@ looks for `.csv` files in the `data` folder.
 - `fit` fits a model from the `model` folder to the datasets in the
 `data` folder.
 
-- `fit-diagnostic` diagnostics of model fits found in `fit`.
+- `fit-diagnostic` diagnostics of model fits found in `fit`. The key is in `key.txt` inside the folder.
 
 - `fit-plot` plots of results. The key is in `key.txt` inside the folder.
 
@@ -55,7 +55,7 @@ datasets and moves them to `data` under the names of
 
 When given a large sample with no measurement error, both models (`alex-modified` and `no-meas-error`) produce the correct estimates of relative fitness. `alex-modified` does not estimate variability, `no-meas-error` does.
 
-When given a large sample with measurement error, `alex-modified` remains unbiased but tends to understimate the variance of the estimate (by around 30%). `no-meas-error` is biased (8% towards the null) and slightly underestimates the variance of the estimate.
+When given a large sample with measurement error, `alex-modified` remains unbiased but tends to underestimate the variance of the estimate (by around 30%). `no-meas-error` is biased (8% towards the null) and slightly underestimates the variance of the estimate.
 
 When given a small sample with measurement error, Alex's model (`alex-modified`) is a bit better at finding the correct point estimate. My model (`no-meas-error`) is a bit better at estimating how much the estimate varies.
 
