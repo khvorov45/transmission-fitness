@@ -1,0 +1,5 @@
+solid line - median of posterior
+shaded region - 95% of posterior
+dotted line - diagonal (intercept 0, slope 1)
+dashed lines - 95% of prior
+points - data

@@ -5,6 +5,7 @@
 
 library(readr)
 library(stringr)
+library(dplyr)
 library(purrr)
 library(tools)
 

@@ -168,21 +168,22 @@ write_csv(
 )
 
 # Parameters for different data types
+
 data_dict <- tribble(
   ~name, ~nsam, ~relative_fitness, ~kappa, ~measure_sd,
   "no-meas-error", 1e3, 1, 5, 0,
   "meas-error", 1e3, 1, 5, 0.02,
   "meas-error-neg", 1e3, -1, 5, 0.02,
-  "likereal", 10, 1, 5, 0.02
+  "likereal", 8, 1, 5, 0.02
 )
 
 # Simulating one of the data profiles and fitting one of the models to it
 
-nsim <- 1e3
+nsim <- 1000
 
 verify_model(
-  model_name = "no-meas-error",
-  data_name = "meas-error-neg", data_dict = data_dict,
+  model_name = "no-meas-error", data_name = "likereal",
+  data_dict = data_dict,
   nsim = nsim, model_folder = model_folder,
   simulation_folder = simulation_folder,
   write_results = TRUE

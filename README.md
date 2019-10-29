@@ -37,9 +37,9 @@ looks for `.csv` files in the `data` folder.
 
 - `fit-diagnostic` diagnostics of model fits found in `fit`.
 
-- `fit-plot` plots of results.
+- `fit-plot` plots of results. The key is in `key.txt` inside the folder.
 
-- `model` contains Stan model files. `alex_modified` is the same as [`alex-unmodified`][https://github.com/aezarebski/competitive-mixtures/blob/master/src/between-host/mccaw.stan] except that variable names are changed to be the same as they are in `no-meas-error`.
+- `model` contains Stan model files. `alex_modified` is the same as [`alex-unmodified`](https://github.com/aezarebski/competitive-mixtures/blob/master/src/between-host/mccaw.stan) except that variable names are changed to be the same as they are in `no-meas-error`.
 
 - `paper` contains the paper describing the model.
 
@@ -47,4 +47,14 @@ looks for `.csv` files in the `data` folder.
 model and verifies the model by fitting it to the simulated data.
 The summary of results is in `summary.csv`. The script also generates
 datasets and moves them to `data` under the names of
-`simulated-example`.
+`simulated-*`.
+
+## Simulation results
+
+When given a large sample with no measurement error, both models (`alex-modified` and `no-meas-error`) produce the correct estimates of relative fitness. `alex-modified` does not estimate variability (in a parameter), `no-meas-error` does.
+
+When given a large sample with measurement error, `alex-modified` remains unbiased but tends to understimate the variance of the estimate (by around 30%). `no-meas-error` is biased (8% towards the null) and slightly underestimates the variance of the estimate.
+
+When given a small sample with measurement error, Alex's model (`alex-modified`) is a bit better at finding the correct point estimate. My model (`no-meas-error`) is a bit better at estimating how much the estimate varies.
+
+I used `no-meas-error` to fit real data.
