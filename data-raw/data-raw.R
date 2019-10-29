@@ -4,7 +4,8 @@
 # Last edit 2019/10/24
 
 library(readr)
-library(dplyr)
+suppressPackageStartupMessages(library(dplyr))
+library(purrr)
 
 data_folder <- "data"
 data_raw_folder <- "data-raw"

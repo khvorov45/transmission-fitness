@@ -5,8 +5,9 @@
 
 library(tools)
 library(readr)
-library(ggplot2)
-library(purrr)
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(purrr))
 library(ggdark) # devtools::install_github("khvorov45/ggdark")
 
 fit_folder <- "fit"

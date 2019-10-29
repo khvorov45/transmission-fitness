@@ -17,6 +17,8 @@ cd path/to/transmission-fitness.Rproj
 Rscript data-plot/data-plot.R
 ```
 
+Note that all the plots use a modified version of `ggdark` which is installed via `devtools::install_github("khvorov45/ggdark")`. CRAN's `ggdark` does not have the same functions. To use CRAN's `ggdark`, remove `verbose` argument to `dark_theme_bw`, replace `ggsave_dark` with `ggsave` and remove its `dark` argument.
+
 ## Directories
 
 - `data` contains `.csv` files that serve as the data to be analysed.
@@ -47,11 +49,11 @@ looks for `.csv` files in the `data` folder.
 model and verifies the model by fitting it to the simulated data.
 The summary of results is in `summary.csv`. The script also generates
 datasets and moves them to `data` under the names of
-`simulated-*`.
+`simulated-*`. Change the `model_name`, `data_name` and `nsim` arguments to `verify_model` to reproduce results.
 
 ## Simulation results
 
-When given a large sample with no measurement error, both models (`alex-modified` and `no-meas-error`) produce the correct estimates of relative fitness. `alex-modified` does not estimate variability (in a parameter), `no-meas-error` does.
+When given a large sample with no measurement error, both models (`alex-modified` and `no-meas-error`) produce the correct estimates of relative fitness. `alex-modified` does not estimate variability, `no-meas-error` does.
 
 When given a large sample with measurement error, `alex-modified` remains unbiased but tends to understimate the variance of the estimate (by around 30%). `no-meas-error` is biased (8% towards the null) and slightly underestimates the variance of the estimate.
 

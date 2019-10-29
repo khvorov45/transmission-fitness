@@ -4,8 +4,9 @@
 # Last edit 2019/10/28
 
 library(tools)
-library(rstan)
+suppressPackageStartupMessages(library(rstan))
 library(readr)
+suppressPackageStartupMessages(library(dplyr))
 library(purrr)
 
 fit_folder <- "fit"

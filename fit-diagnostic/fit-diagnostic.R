@@ -4,14 +4,14 @@
 # Last edit 2019/10/29
 
 library(tools)
-library(ggplot2)
-library(ggpubr)
-library(scales)
-library(readr)
-library(purrr)
-library(tidyr)
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(ggpubr))
+suppressPackageStartupMessages(library(scales))
+suppressPackageStartupMessages(library(readr))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(purrr))
+suppressPackageStartupMessages(library(tidyr))
 library(ggdark) # devtools::install_github("khvorov45/ggdark")
-
 
 fit_folder <- "fit"
 fit_diag_folder <- "fit-diagnostic"
@@ -44,7 +44,7 @@ plot_trace <- function(samples) {
     additional_theme() +
     theme(strip.text = element_blank()) +
     scale_y_continuous("Iteration") +
-    scale_x_continuous("Value", labels = comma_format()) +
+    scale_x_continuous("Value") +
     geom_path(alpha = 0.5) +
     facet_wrap(~term, scales = "free_x", nrow = 1)
 }
