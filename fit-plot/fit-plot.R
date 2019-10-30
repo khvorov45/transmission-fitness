@@ -43,8 +43,8 @@ plot_curve <- function(fitted_vals, data) {
     theme(
       panel.grid.minor = element_blank()
     ) +
-    scale_x_continuous("Proportion in donor", breaks = seq(0, 1, 0.1)) +
-    scale_y_continuous("Proportion in recipient", breaks = seq(0, 1, 0.1)) +
+    scale_x_continuous("Donor proportion", breaks = seq(0, 1, 0.1)) +
+    scale_y_continuous("Recipient proportion", breaks = seq(0, 1, 0.1)) +
     prior_line(aes(y = prior_lb)) +
     prior_line(aes(y = prior_ub)) +
     geom_point(data = data, aes(donor, recipient), shape = 18) +

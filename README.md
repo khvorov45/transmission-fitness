@@ -47,16 +47,16 @@ looks for `.csv` files in the `data` folder.
 
 - `simulation` contains a script that simulates ideal data for the
 model and verifies the model by fitting it to the simulated data.
-The summary of results is in `summary.csv`. The script also generates
-datasets and moves them to `data` under the names of
-`simulated-*`. Change the `model_name`, `data_name` and `nsim` arguments to `verify_model` to reproduce results.
+The summary of results is in `summary.csv`. Change the `model_name`, `data_name` and `nsim` arguments to `verify_model` to reproduce results.
 
 ## Simulation results
 
-When given a large sample with no measurement error, both models (`alex-modified` and `no-meas-error`) produce the correct estimates of relative fitness. `alex-modified` does not estimate variability, `no-meas-error` does.
+When given a large sample with no measurement error, both `alex-modified` and `no-meas-error` produce the correct estimates of relative fitness. `alex-modified` does not estimate variability, `no-meas-error` does.
 
 When given a large sample with measurement error, `alex-modified` remains unbiased but tends to underestimate the variance of the estimate (by around 30%). `no-meas-error` is biased (8% towards the null) and slightly underestimates the variance of the estimate.
 
-When given a small sample with measurement error, Alex's model (`alex-modified`) is a bit better at finding the correct point estimate. My model (`no-meas-error`) is a bit better at estimating how much the estimate varies.
+When given a small sample with measurement error, `alex-modified` is a bit better at finding the correct point estimate. `no-meas-error` is a bit better at estimating how much the estimate varies.
 
-I used `no-meas-error` to fit real data.
+`meas-error` is exactly like `no-meas-error` except that it accounts for measurement error (observed measurements are assumed to be normally distributed around true values (sd = 0.05)).
+
+I used `meas-error` to fit real data.

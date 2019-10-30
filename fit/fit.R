@@ -39,12 +39,13 @@ extract_samples <- function(fit) {
 }
 
 nme_model <- stan_model(file.path(model_folder, "no-meas-error.stan"))
+me_model <- stan_model(file.path(model_folder, "meas-error.stan"))
 
 data_files <- list_files_with_exts(data_folder, "csv")
 data_list <- map(data_files, ~read_csv(.x, col_types = cols()))
 names(data_list) <- gsub(".csv", "", basename(data_files))
 
-fit_list <- map(data_list, fit_stan_real, nme_model)
+fit_list <- map(data_list, fit_stan_real, me_model)
 
 samples_list <- map(fit_list, extract_samples)
 
