@@ -57,6 +57,6 @@ When given a large sample with measurement error, `alex-modified` remains unbias
 
 When given a small sample with measurement error, `alex-modified` is a bit better at finding the correct point estimate. `no-meas-error` is a bit better at estimating how much the estimate varies.
 
-`meas-error` is exactly like `no-meas-error` except that it accounts for measurement error (observed measurements are assumed to be normally distributed around true values (sd = 0.05)).
+`meas-error` is exactly like `no-meas-error` except that it accounts for measurement error (observed measurements are assumed to be normally distributed around true values (sd = 0.05)). Due to how long it takes to fit, I cannot run many simulations with it.
 
 I used `meas-error` to fit real data.

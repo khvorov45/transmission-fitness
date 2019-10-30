@@ -129,6 +129,7 @@ summ_stan_fit <- function(stan_fit,
         everything(), names_to = "term", values_to = "true_value"
       )
     summ <- left_join(summ, true_vals, by = "term")
+    summ$nsam <- data_dict$nsam[data_dict$name == data_name]
   }
   summ
 }
@@ -199,10 +200,10 @@ data_dict <- tribble(
 
 # Simulating one of the data profiles and fitting one of the models to it
 
-nsim <- 100
+nsim <- 2
 
 verify_model(
-  model_name = "meas-error", data_name = "meas-error",
+  model_name = "meas-error", data_name = "likereal",
   data_dict = data_dict,
   nsim = nsim, model_folder = model_folder,
   simulation_folder = simulation_folder,

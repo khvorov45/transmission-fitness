@@ -28,7 +28,7 @@ me <- stan_model(file.path(model_folder, "meas-error.stan"))
 
 # Fit one
 fit_nme <- fit_stan_model(nme, pop)
-fit_alex <- fit_stan_model(alex, pop)
+fit_alex <- fit_stan_model(alex, pop_er)
 fit_me <- fit_stan_model(me, pop_er, iter = 10000)
 
 # Summarise one
