@@ -1,0 +1,30 @@
+---
+title: "mccaw-meas-error"
+author: "Arseniy Khvorov"
+date: "07/11/2019"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Notation
+
+$R^o$ --- observed recipient proportion. \
+$D^o$ --- observed donor proportion. \
+$R$ --- true recipient proportion. \
+$D$ --- true donor proportion. \
+$\theta$ --- relative fitness parameter. \
+$\kappa$ --- parameter associated with the variance of $R$. \ $Var(R)=\frac{1}{\kappa(\kappa+1)}$
+
+## Model
+
+\begin{align*}
+D_{i}^{o} &\sim N(D_i, 0.05^2) \\
+R_{i}^{o} &\sim N(R_i, 0.05^2) \\
+R_i &\sim \text{Beta}(\mu_i \kappa, (1 - \mu_i)\kappa) \\
+\mu_i &= \frac{D_i}{D_i + (1 - D_i)e^\theta}
+\end{align*}
