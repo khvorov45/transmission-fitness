@@ -26,8 +26,6 @@ alex_data <- map_dfr(alex_files, read_raw_csv, data_raw_folder) %>%
   select(
     recipient = "% in Recipient", donor = "% in Donor", mutation = filename
   ) %>%
-  mutate(recipient = recipient / 100, donor = donor / 100) %>%
-  group_split(mutation)
-names(alex_data) <- map_chr(alex_data, function(tbl) unique(tbl$mutation))
+  mutate(recipient = recipient / 100, donor = donor / 100)
 
-iwalk(alex_data, save_csv, data_folder)
+write_csv(alex_data, file.path(data_folder, "alex-data.csv"))
