@@ -30,8 +30,8 @@ plot_data <- function(data) {
     ggplot(aes(donor, recipient)) +
     dark_theme_bw(verbose = FALSE) +
     coord_cartesian(xlim = c(0, 1), ylim = c(0, 1)) +
-    xlab("Proportion in donor") +
-    ylab("Proportion in recipient") +
+    xlab("Donor proportion") +
+    ylab("Recipient proportion") +
     scale_x_continuous(expand = c(0, 0.02)) +
     scale_y_continuous(expand = c(0, 0.02)) +
     geom_point(shape = 18) +
