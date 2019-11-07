@@ -21,18 +21,13 @@ Note that all the plots use a modified version of `ggdark` which is installed vi
 
 ## Directories
 
-- `data` contains `.csv` files that serve as the data to be analysed.
-Each `.csv` file contains two columns: `recipient` (outcome) and
-`donor` (covariate). Both of these represent the proportion of a
-virus (not a percentage). Other columns may be present and will be
-ignored.
+- `data` contains a `.csv` file that serves as the data to be analysed. Columns: `recipient` (outcome), `donor` (covariate) and `mutation` (subsets for fitting/plotting). 
 
 - `data-plot` contains a script to generate data plots. The script
 looks for `.csv` files in the `data` folder.
 
-- `data-raw` contains files that need to be cleaned before moving into
-`data`. The script cleans the data in `data-raw` and moves it to
-`data` keeping the filenames.
+- `data-raw` contains files that need to be cleaned/reformatted before moving into
+`data`.
 
 - `fit` fits a model from the `model` folder to the datasets in the
 `data` folder.
