@@ -1,7 +1,7 @@
 # Fit model to data
 # Arseniy Khvorov
 # Created 2019/10/24
-# Last edit 2019/10/28
+# Last edit 2019/11/07
 
 library(tools)
 suppressPackageStartupMessages(library(rstan))
@@ -13,7 +13,9 @@ fit_folder <- "fit"
 data_folder <- "data"
 model_folder <- "model"
 
-fit_stan_real <- function(data, model_compiled) {
+# Functions ===================================================================
+
+fit_stan_one <- function(data, model_compiled) {
   sampling(
     model_compiled,
     data = list(
@@ -29,24 +31,49 @@ fit_stan_real <- function(data, model_compiled) {
   )
 }
 
-extract_samples <- function(fit) {
+extract_samples_one <- function(fit, data_name) {
   nchain <- length(get_inits(fit))
   pars <- names(fit)[!grepl("\\[", names(fit))]
   pars <- pars[pars != "lp__"]
   as.data.frame(fit, pars) %>%
     as_tibble() %>%
-    mutate(chain = rep(1:nchain, each = n() / nchain))
+    mutate(chain = rep(1:nchain, each = n() / nchain), data = data_name)
 }
 
-nme_model <- stan_model(file.path(model_folder, "no-meas-error.stan"))
-me_model <- stan_model(file.path(model_folder, "meas-error.stan"))
+extract_samples_model <- function(fit_list_model, model_name) {
+  imap_dfr(fit_list_model, extract_samples_one)
+}
 
-data_files <- list_files_with_exts(data_folder, "csv")
-data_list <- map(data_files, ~read_csv(.x, col_types = cols()))
-names(data_list) <- gsub(".csv", "", basename(data_files))
+fit_stan_model <- function(model_compiled, data_list) {
+  map(data_list, fit_stan_one, model_compiled)
+}
 
-fit_list <- map(data_list, fit_stan_real, me_model)
+save_results_model <- function(samples_list_model, model_name) {
+  iwalk(
+    samples_list_model,
+    ~ write_csv(.x, file.path(fit_folder, paste0(.y, "--", model_name, ".csv")))
+  )
+}
 
-samples_list <- map(fit_list, extract_samples)
+# Fit script ==================================================================
 
-iwalk(samples_list, ~ write_csv(.x, file.path(fit_folder, paste0(.y, ".csv"))))
+# Models
+alex_model <- stan_model(file.path(model_folder, "alex-modified.stan"))
+me_model <- stan_model(file.path(model_folder, "mccaw-meas-error.stan"))
+model_list <- list("mccaw-meas-error" = me_model, "alex" = alex_model)
+
+# Data
+data <- read_csv(file.path(data_folder, "alex-data.csv"), col_types = cols())
+data_list <- group_split(data, mutation)
+names(data_list) <- group_keys(data, mutation)$mutation
+
+# Fit all models to all data (subsets)
+fit_list <- map(model_list, fit_stan_model, data_list)
+
+# Extract and save samples
+samples_list <- map(fit_list, extract_samples_model)
+iwalk(
+  samples_list,
+  ~ write_csv(.x, file.path(fit_folder, paste0(.y, ".csv")))
+)
+
