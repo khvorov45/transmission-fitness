@@ -1,7 +1,7 @@
 # Cleans the raw files before moving them to data
 # Arseniy Khvorov
 # Created 2019/10/24
-# Last edit 2019/10/24
+# Last edit 2019/11/07
 
 library(readr)
 suppressPackageStartupMessages(library(dplyr))
