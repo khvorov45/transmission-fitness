@@ -17,13 +17,15 @@ fit_folder <- "fit"
 fit_diag_folder <- "fit-diagnostic"
 data_folder <- "data"
 
+# Functions ===================================================================
+
 lengthen_samples <- function(samples) {
   samples %>%
-    group_by(chain) %>%
+    group_by(chain, data) %>%
     mutate(iter = row_number()) %>%
     ungroup() %>%
     pivot_longer(
-      cols = c(-chain, -iter), names_to = "term", values_to = "sample"
+      cols = c(-chain, -iter, -data), names_to = "term", values_to = "sample"
     )
 }
 
@@ -36,9 +38,8 @@ additional_theme <- function() {
   )
 }
 
-plot_trace <- function(samples) {
-  samples %>%
-    lengthen_samples() %>%
+plot_trace_one <- function(samples_long) {
+  samples_long %>%
     ggplot(aes(sample, iter, col = as.factor(chain))) +
     dark_theme_bw(verbose = FALSE) +
     additional_theme() +
@@ -49,8 +50,13 @@ plot_trace <- function(samples) {
     facet_wrap(~term, scales = "free_x", nrow = 1)
 }
 
-plot_density <- function(samples, prior_dict) {
-  long_samples <- lengthen_samples(samples)
+plot_trace_model <- function(samples_model) {
+  samples_split <- samples_model %>% lengthen_samples() %>% group_split(data)
+  names(samples_split) <- group_keys(samples_model, data)$data
+  map(samples_split, plot_trace_one)
+}
+
+plot_density_one <- function(long_samples, prior_dict) {
   priors <- list()
   for (prior_name in names(prior_dict)) {
     priors[[prior_name]] <- stat_function(
@@ -70,7 +76,13 @@ plot_density <- function(samples, prior_dict) {
     geom_freqpoly(alpha = 0.5, stat = "density")
 }
 
-arrange_itdens <- function(dens, iter) {
+plot_density_model <- function(samples_model, prior_dict) {
+  samples_split <- samples_model %>% lengthen_samples() %>% group_split(data)
+  names(samples_split) <- group_keys(samples_model, data)$data
+  map(samples_split, plot_density_one, prior_dict)
+}
+
+arrange_itdens_one <- function(dens, iter) {
   ggarrange(
     dens + rremove("x.axis") + rremove("xlab") +
       rremove("x.text") + rremove("x.ticks"),
@@ -78,26 +90,43 @@ arrange_itdens <- function(dens, iter) {
   )
 }
 
-save_itdens_arranged <- function(plot, name, fit_diag_folder) {
+arrange_itdens_model <- function(dens_model, iter_model) {
+  map2(dens_model, iter_model, arrange_itdens_one)
+}
+
+save_itdens_arranged_one <- function(plot, data_name,
+                                     model_name, fit_diag_folder) {
   ggsave_dark(
-    file.path(fit_diag_folder, paste0(name, ".pdf")),
+    file.path(fit_diag_folder, paste0(data_name, "--", model_name, ".pdf")),
     plot, dark = FALSE, width = 15, height = 15, units = "cm", device = "pdf"
   )
 }
+
+save_itdens_arranged_model <- function(plot_model, model_name,
+                                       fit_diag_folder) {
+  iwalk(plot_model, save_itdens_arranged_one, model_name, fit_diag_folder)
+}
+
+# Plot script =================================================================
 
 samples_files <- list_files_with_exts(fit_folder, "csv")
 samples_list <- map(samples_files, ~ read_csv(.x, col_types = cols()))
 names(samples_list) <- gsub(".csv", "", basename(samples_files))
 
-iter_list <- map(samples_list, plot_trace)
+iter_list <- map(samples_list, plot_trace_model)
 
 prior_dict <- list(
-  kappa = function(x) dexp(x, rate = 0.1),
-  relative_fitness = function(x) dnorm(x, mean = 0, sd = 3)
+  "alex" = list(
+    relative_fitness = function(x) dnorm(x, mean = 0, sd = 1)
+  ),
+  "mccaw-meas-error" = list(
+    kappa = function(x) dexp(x, rate = 0.1),
+    relative_fitness = function(x) dnorm(x, mean = 0, sd = 3)
+  )
 )
 
-dens_list <- map(samples_list, plot_density, prior_dict)
+dens_list <- map2(samples_list, prior_dict, plot_density_model)
 
-it_dens_arranged <- map2(dens_list, iter_list, arrange_itdens)
+it_dens_arranged <- map2(dens_list, iter_list, arrange_itdens_model)
 
-iwalk(it_dens_arranged, save_itdens_arranged, fit_diag_folder)
+iwalk(it_dens_arranged, save_itdens_arranged_model, fit_diag_folder)
