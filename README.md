@@ -8,7 +8,7 @@ framework using [Stan](https://mc-stan.org/) and
 ## Usage
 
 Everything can be run interactively (launch the `.Rproj` file in
-RStudio). Every script (except those that start with `test-`) 
+RStudio). Every script
 can also be executed from a terminal as long as
 the working directory is that of the `.Rproj` file, for example:
 
@@ -44,19 +44,3 @@ looks for `.csv` files in the `data` folder.
 - `model` contains Stan model files. `alex_modified` is the same as [`alex-unmodified`](https://github.com/aezarebski/competitive-mixtures/blob/master/src/between-host/mccaw.stan) except that variable names are changed to be the same as they are in `no-meas-error`.
 
 - `paper` contains the paper describing the model.
-
-- `simulation` contains a script that simulates ideal data for the
-model and verifies the model by fitting it to the simulated data.
-The summary of results is in `summary.csv`. Change the `model_name`, `data_name` and `nsim` arguments to `verify_model` to reproduce results.
-
-## Simulation results
-
-When given a large sample with no measurement error, both `alex-modified` and `no-meas-error` produce the correct estimates of relative fitness. `alex-modified` does not estimate variability, `no-meas-error` does.
-
-When given a large sample with measurement error, `alex-modified` remains unbiased but tends to underestimate the variance of the estimate (by around 30%). `no-meas-error` is biased (8% towards the null) and slightly underestimates the variance of the estimate.
-
-When given a small sample with measurement error, `alex-modified` is a bit better at finding the correct point estimate. `no-meas-error` is a bit better at estimating how much the estimate varies.
-
-`meas-error` is exactly like `no-meas-error` except that it accounts for measurement error (observed measurements are assumed to be normally distributed around true values (sd = 0.05)). Due to how long it takes to fit, I cannot run many simulations with it.
-
-I used `meas-error` to fit real data.
